@@ -1,0 +1,131 @@
+/*
+ * Formal Description of the Prompt Preprocessing Language
+ */
+
+/*
+ * 1. Overview
+ *    This document describes a simple, line-oriented preprocessing language designed for
+ *    modifying text prompts. The language supports comments, macro definitions, file inclusion,
+ *    URL content retrieval, AI-powered content generation and random choice selection.
+ */
+
+/*
+ * 2. Lexical Structure
+ *    The language consists of the following lexical elements:
+ */
+/*
+ *   2.1. Whitespace:
+ *       - Space (' '), tab ('\t'), carriage return ('\r'), and newline ('\n') characters are
+ *         considered whitespace.
+ *       - Whitespace is used as a separator between tokens, but is generally ignored in the main text.
+ *       - Repeated empty lines are removed.
+ */
+/*
+ *  2.2. Comments:
+ *      - Two types of comments are supported:
+ *        - Multiline comments start with '/*' and end with '*/'. They can span multiple lines.
+ *        - End-of-line comments start with '//' and continue until the end of the line.
+ *          However, '//' will be ignored if it is part of URL, like https://www.example.com.
+ *      - Comments are ignored during preprocessing.
+ */
+/*
+ *  2.3. Directives:
+ *      - Directives begin with the '#' character at the start of a new line.
+ *      - The format for directives is generally: '#<keyword> [<name>] {<content>}'.
+ *          - `<keyword>`: Specifies the action of the directive (e.g., `include`, `define`).
+ *          - `[<name>]`: Optional, when specified, the directive stores the processed content
+ *                          into the macro named `<name>`.
+ *          - `{<content>}`: The content relevant to the directive.
+ *      - Some directives have specific restrictions to the content
+ *      - Directives can spread for multiple lines until closing curly bracket `}`
+ *  2.4. Macros
+ *      - Macro consists of name and content.
+ *      - Macro name is a sequence of word characters.
+ *      - Macro content is a string or text, which can contain other macros.
+ *      - Macros are stored during preprocessing and can be referred by #<MACRO_NAME>
+ *  2.5. Text:
+ *       - Any line which is not a comment or directive is considered a text line.
+ *       - Text lines can contain references to macros, in form of #<MACRO_NAME>
+ */
+
+/*
+ * 3. Directive Keywords
+ *    The following directives are supported:
+ */
+/*
+ *   3.1. #include:
+ *       - Format: `#include [<name>] {<file_path>}`
+ *       - Action:
+ *         - If `<name>` is present, reads the content of the file at `<file_path>`
+ *           and stores it in a macro named `<name>`. Directive itself is removed.
+ *         - If `<name>` is absent, replaces the entire directive line with the
+ *           content of the file at `<file_path>`.
+ *       - The file path is a standard file path, relative or absolute.
+ *       - Files are read with UTF-8 encoding.
+ */
+/*
+ *   3.2. #open:
+ *       - Format: `#open [<name>] {<url>}`
+ *       - Action:
+ *          - If `<name>` is present, retrieves content from the URL at `<url>` and stores it
+ *             in a macro named `<name>`. Directive itself is removed.
+ *         - If `<name>` is absent, retrieves the content from the URL at `<url>` and replaces
+ *           the entire directive line with the retrieved content.
+ *       - The URL is a standard URL.
+ *       - The content is assumed to be in UTF-8 format.
+ */
+/*
+ *  3.3. #ask:
+ *      - Format: `#ask [<name>] {<prompt>}`
+ *      - Action:
+ *         - If `<name>` is present, sends the `<prompt>` to an AI service, gets a text response
+ *          and stores it in a macro named `<name>`. Directive itself is removed.
+ *        - If `<name>` is absent, sends the `<prompt>` to an AI service, gets a text response
+ *          and replaces the entire directive line with the received text.
+ *      - It requires a configured AI service (Google Gemini is the default one).
+ */
+/*
+ *  3.4. #define:
+ *      - Format: `#define <name> {<text>}`
+ *      - Action:
+ *         - Creates a macro named `<name>` with its content set to the provided `<text>`.
+ *         - The directive line itself is removed
+ *      - Unlike C preprocessor, the `<text>` can include line breaks and does not require escape
+ *        for quotes.
+ */
+/*
+ *  3.5. #random:
+ *      - Format: `#random <name> {<choice1>, <choice2>, <choice3>, ...}`
+ *      - Action:
+ *          - Creates a macro named `<name>` and stores in it randomly selected choice.
+ *          - Directive itself is removed.
+ *       - Choices are comma-separated and whitespace around the commas are stripped.
+ */
+
+/*
+ * 4. Macro Expansion
+ *    - Text lines can refer to macros using the `#<macro_name>` syntax.
+ *    - Macro expansion is recursive; a macro can include other macros and so on.
+ *    - Expansion is performed after the removal of comments, directives processing,
+ *      and paragraph grouping.
+ */
+/*
+ * 5. Preprocessing Steps
+ *     - The preprocessing steps are performed in a loop, until the output text stabilizes
+ *      (does not change).
+ *     - The steps are:
+ *       1. Remove multi-line comments.
+ *       2. Split text into lines by '\r\n' or '\n'.
+ *       3. Remove EOL comments, avoiding splitting of urls, and trim the lines.
+ *       4. Combine incomplete directives if closing curly brace is not found in the same line.
+ *       5. Group non-empty text lines into paragraphs.
+ *       6. Remove repeated empty lines
+ *       7. Process each line:
+ *           - If the line is a directive, perform its specific action.
+ *           - If the line is text, expand any macros.
+ *
+ */
+/*
+ * 6. Encoding
+ *     - Files read and URLs accessed use UTF-8 character encoding.
+ */
